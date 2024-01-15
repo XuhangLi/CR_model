@@ -24,7 +24,7 @@ _MATLAB_ programs
 * __a1_save_rel_del_flux_mat.m__: The script to save the core function scores of each gene into a csv matrix.
 
 _R_ programs
-*__2_DEG_modeling_supp_gspd_1_example_objHeatmap.R__: Script to produce the bar plot visualization of core functions of differentially expressed genes (DEGs) in gspd-1 RNAi. Related to **Fig. 6c**. 
+* __2_DEG_modeling_supp_gspd_1_example_objHeatmap.R__: Script to produce the bar plot visualization of core functions of differentially expressed genes (DEGs) in gspd-1 RNAi. Related to **Fig. 6c**. 
 * __2_DEG_modeling_basic_CR_model.R__: R script to visualize the differentially expressed genes (DEGs) in metabolic gene WPS dataset with respect to the core metabolic functions. Related to **Fig. 6d**.
 * __2_DEG_modeling_supp_excludeMultiObjGenes.R__: Same as __2_DEG_modeling_basic_CR_model.R__ but only analyzed genes with unique core function associations
 * __2_DEG_modeling_supp_fused_with_FBA.R__: Testing the FBA-based CR model with the entire metabolic WPS dataset. Related to **Fig. 6g**.
