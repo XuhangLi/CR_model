@@ -47,3 +47,7 @@ _Folders_
 * __figures__: raw figures used for making the paper. These figures were the input for final figure making in Illustrator.
 
 We tried our best to ensure the codes are well commented and readable. However, if you encounter any questions, please feel free to reach out (see below for __Contacts__)!
+
+## Contact
+
+Any questions or suggestions on reproducing CR model analysis or testing it in other systems/datasets are welcomed! Please contact Xuhang Li ([xuhang.li\@umassmed.edu](mailto:xuhang.li@umassmed.edu) for questions!
