@@ -2,9 +2,9 @@
 The compensation/repression model of transcriptional rewiring of metabolism
 
 ## Introduction 
-We developped the compensation/repression (CR) model to explain the massive and diverse regulation of metabolic genes expression in the metabolic gene Worm Perturb-seq (WPS) dataset. CR model describles a high-level designing principle of how metabolism is transcriptionally rewired upon perturbation: at core function level, genes related to the affected core function(s) are up regulated to <ins>compensate</ins> for the perturbation while those related to other core functions are transcriptionally <ins>repressed</ins>. The discovery of CR model relies on Flux Balance Analysis (FBA) using metabolic network model to associate genes with core functions. This repository contains the scripts, data and figures for reproducing CR model analysis reported in our manuscript. A schematic illustrating the step, FBA modeling of core functions, is shown below:
+We developped the compensation/repression (CR) model to explain the massive and diverse regulation of metabolic genes expression in the metabolic gene Worm Perturb-seq (WPS) dataset. CR model describles a high-level designing principle of how metabolism is transcriptionally rewired upon perturbation: at core function level, genes related to the affected core function(s) are up regulated to <ins>compensate</ins> for the perturbation while those related to other core functions are transcriptionally <ins>repressed</ins>. The discovery of CR model relies on Flux Balance Analysis (FBA) using metabolic network model to associate genes with core functions. This repository contains the scripts, data and figures for reproducing CR model analysis reported in our manuscript. A schematic illustrating the key step, FBA modeling of core functions, is shown below:
 
-<img src="figures/FBA_cartoon.png" width="600"/>
+<img src="figures/FBA_cartoon.png" width="1000"/>
 
 For further reading about CR model, please refer to our paper: 
 [Title and authors](https://bioRxiv_link)
