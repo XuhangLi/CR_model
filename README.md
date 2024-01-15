@@ -1,4 +1,4 @@
-# CR_model
+# Compensation/Repression (CR) model
 The compensation/repression model of transcriptional rewiring of metabolism
 
 ## Introduction 
