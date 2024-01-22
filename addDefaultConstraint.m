@@ -192,6 +192,8 @@ elseif strcmp(type,'minimalExchange@1')
     % to bypass real energy demand; we prevent this loop
     model = changeRxnBounds(model,'RCC0139',0,'l'); % although BRENDA supports reversible, a sig. reverse flux is not likely feasible and this is the setting in human model
 
-    
+    % block a reaction that is a misannotation in the model and should be not
+    % existing
+    model = changeRxnBounds(model,'TCM1071',0,'b'); % remove the nadp version
 end
 end

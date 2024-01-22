@@ -8,7 +8,7 @@ modelObj = c('energy','lipid','pro_modi','pro_syn','nucl_acid')
 classMat = classMat[,modelObj]
 
 library(matrixStats)
-# confirm 735 (+1 mccc-2/mrpl-44) assigned genes 
+# confirm 736 (+1 mccc-2/mrpl-44) assigned genes 
 classMat = as.matrix(classMat)
 sum(rowAnys(classMat))
 
@@ -16,9 +16,9 @@ sum(rowAnys(classMat))
 RNAiInfo = read.csv('./../../data_and_tables_to_publish/RNAi_condition_information.csv')
 RNAiInfo$RNAi_WBID[which(RNAiInfo$RNAi_WBID == 'WBGene00008514/WBGene00303021')] = 'WBGene00008514'
 
-# total tested genes is 549
+# total tested genes is 548
 sum(rownames(classMat)[rowAnys(classMat)] %in% RNAiInfo$RNAi_WBID)
-# total responsive genes is 261
+# total responsive genes is 260
 sum(rownames(classMat)[rowAnys(classMat)] %in% RNAiInfo$RNAi_WBID[RNAiInfo$isResponsive])
 # total iCEL responsive is 361
 sum(rownames(classMat) %in% RNAiInfo$RNAi_WBID[RNAiInfo$isResponsive])
@@ -26,8 +26,8 @@ sum(rownames(classMat) %in% RNAiInfo$RNAi_WBID[RNAiInfo$isResponsive])
 sum(rownames(classMat) %in% RNAiInfo$RNAi_WBID)
 
 # check enrichment 
-phyper(261-1,361, 891-361, 549,lower.tail = F) # 3.51e-7
-phyper(261-1,549, 891-549, 361,lower.tail = F) # 3.51e-7
+phyper(260-1,361, 891-361, 548,lower.tail = F) # 5.723005e-08
+phyper(260-1,548, 891-548, 361,lower.tail = F) # 5.723005e-08
 
 
 # load DEG table
@@ -39,11 +39,11 @@ DEtbl = DEtbl[DEtbl$is_in_mGRN,]
 
 # total unique DEG in iCEL is 977
 sum(rownames(classMat) %in% DEtbl$DEG_WBID)
-# total unique DEG genes assigned to objective is 614
+# total unique DEG genes assigned to objective is 613
 sum(rownames(classMat)[rowAnys(classMat)] %in% DEtbl$DEG_WBID)
 # total genes in iCEL is 1314
 nrow(classMat)
-# total objective-assigned genes in iCEL is 739
+# total objective-assigned genes in iCEL is 737
 sum(rowAnys(classMat))
 
 # # total DEG calls in iCEL is 14084
@@ -53,7 +53,7 @@ sum(rowAnys(classMat))
 # --> the proportion is similar 
 
 # check enrichment 
-phyper(614-1,977, 1314-977, 739,lower.tail = F) # 1.88e-16
+phyper(613-1,977, 1314-977, 737,lower.tail = F) # 1.128663e-16
 
 
 # the iCEL genes and conditions in mGRN without any filteirng 

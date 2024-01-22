@@ -1,11 +1,12 @@
-# 02062023
+# "consistency" analysis: check among all DEGs that have core function associations, what proportion are consistent with the CR model 
+# this is not included in the manuscript as the interpretation is not changed, but it is good to include in this Github for folks who
+# wants to look into CR model. 
 
-# by default, we only look at singles for consistency; it is more meaningful as the multiples will be too ambigous so 
-# the background consistency will be extremely high
+# for this analysis, we can also only look at genes with single associations or look at all genes with core functions (as we did in 
+# regular test of CR model)
 
-# the background is not impressively low (but low), this is partially related to energy that allows all up DEG to be explained. 
-# but in generally, the significance level of consistency is at most ~2-fold (ie bg at ~0.4 and observation at ~0.7)
-
+# running with both multiple and single-association genes will causes a high background, so to help interpretation, we choose only using
+# single here. But feel free to try both
 singleOnly = T
 
 library(stringr)
@@ -13,6 +14,7 @@ library(ggplot2)
 library(ggpubr)
 library(matrixStats)
 
+# load data
 # load the met gene classifications
 scoreMat = read.csv('output/delta_flux_scoreMat.csv',row.names = 1)
 classMat = as.data.frame(1*(scoreMat > 1e-3))
@@ -40,7 +42,7 @@ inputTb=read.csv('./../../2_DE/output/DE_merged_clean_pcutoff_0.005_master_table
 inputTb = inputTb[-which(inputTb$RNAi == 'x.mrpl_44'),]
 inputTb = inputTb[inputTb$WBID != 'WBGene00008514',]
 
-# no self
+# remove DEGs that are RNAi targeted genes
 inputTb$RNAiID = paste(inputTb$RNAi, inputTb$batchID)
 inputTb$RNAi_geneName = inputTb$RNAi
 inputTb$RNAi_geneName = str_replace(inputTb$RNAi_geneName,'^x.','')
@@ -79,27 +81,6 @@ inputTb_metResponsiove = inputTb_metResponsiove[!(conditionInfo$RNAi_WBID[match(
                                                     iCELnames$WormBase_Gene_ID[match(pollist$pol_in_model, iCELnames$ICELgene)]),]
 
 
-# manually inspecting a few conditions
-# myCond = 'x.nduf_2.2_met6_lib1' # use this to tune the program
-# upDEGs = inputTb_metResponsiove$WBID[inputTb_metResponsiove$condID == myCond & inputTb_metResponsiove$log2FoldChange_raw > 0]
-# downDEGs = inputTb_metResponsiove$WBID[inputTb_metResponsiove$condID == myCond & inputTb_metResponsiove$log2FoldChange_raw < 0]
-# 
-# tmp = classMat[rownames(classMat) %in% upDEGs, ]
-# colSums(tmp)
-# pheatmap::pheatmap(tmp, labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)])
-# pdf('tmp.pdf')
-# pheatmap::pheatmap(tmp, labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)],fontsize_row = 3)
-# dev.off()
-# 
-# tmp = classMat[rownames(classMat) %in% downDEGs, ]
-# colSums(tmp)
-# pheatmap::pheatmap(tmp)
-# 
-# 
-# tmp = classMat[rownames(classMat) %in% conditionInfo$RNAi_WBID[str_replace(conditionInfo$RNAiID,' ','_') %in% unique(inputTb_metResponsiove$condID)], ]
-# pheatmap::pheatmap(tmp)
-# sum(rowSums(tmp) == 0)
-
 # show the classification of all genes that is iCEL responsive (at least two up or two down)
 upTbl = inputTb_metResponsiove[inputTb_metResponsiove$log2FoldChange_raw > 0, ]
 ct1 = table(upTbl$condID)
@@ -108,41 +89,25 @@ ct2 = table(downTbl$condID)
 icel_resp = union(names(ct1)[ct1 > 1], names(ct2)[ct2 > 1])
 tmp = classMat[rownames(classMat) %in% conditionInfo$RNAi_WBID[str_replace(conditionInfo$RNAiID,' ','_') %in% icel_resp],]
 colSums(tmp)
-#pheatmap::pheatmap(tmp, labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)])
 pheatmap::pheatmap(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')], labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)])
-# pdf('tmp.pdf')
-# pheatmap::pheatmap(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')], labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)],fontsize_row = 2)
-# dev.off()
 
+# show some numbers
 sum(rowSums(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')])>0)/nrow(tmp)
-# 77% valid RNAi targets was included in the modeling framework 
 sum(rowSums(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')])==1)/nrow(tmp)
-# 54% was assigned to a unique classification
 # total number of analyzable condition is 
 n_total = sum(rowSums(classMat[conditionInfo$RNAi_WBID[match(icel_resp, str_replace(conditionInfo$RNAiID,' ','_'))],c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0 )
 n_total/length(icel_resp)
-# 78% valid RNAi conditions are analyzed in the modeling framework 
 # check for the coverage of the unclustered conditions
 uniConds = icel_resp[rowSums(classMat[conditionInfo$RNAi_WBID[match(icel_resp, str_replace(conditionInfo$RNAiID,' ','_'))],c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0]
 RNAiclusters = read.csv('./../../2_DE/output/RNAi_groups.csv')
 sum(RNAiclusters$clusters[(str_replace(RNAiclusters$RNAiID,' ','_') %in% uniConds)] == -1)/sum(RNAiclusters$clusters==-1)
-# although the overall coverage of the RNAi conditions is at similar level (75% vs 78%), the FBA modeling is unbiased 
-# so it covers 44% of unclustered conditions and it assesses all iCEL DEG instead of just selected coexpression clusters
-# so this justifies it as a systems-level validation
 length(intersect(rownames(classMat)[rowSums(classMat[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0], inputTb_metResponsiove$WBID))/(length(unique(inputTb_metResponsiove$WBID)))
-# it covers 66% of DEG space 
 
 
-# try to make plots for the 54% and 23% seperately (we also include the 44% in the 23% analysis)
+# check the porportion explained by CR model 
 total_condition_analyzed = c()
 
-# to visualize the model, we define the multi-obj that contains the target obj as the target obj, others 
-# rank by their total counts of calls and defined as the highest count to lowest (winer takes all)
-# also try simply use this winer takes all rule for all ranks, so the plot is not biased by hypothesis
-# first make plots for the 50% unique classified genes
 obj_perturb = 'lipid'
-# obj_response = 'lipid' # only used
-# obj_direction = 'up'
 modelObj = c('energy','lipid','pro_modi','pro_syn','nucl_acid')
 pdfHeight = c("energy" = 12,
             'lipid' = 7,
@@ -156,14 +121,19 @@ pdfWidth = c("energy" = 20,
              'nucl_acid' = 14)
 
 for (obj_perturb in modelObj){
-  if (obj_perturb == 'energy'){
-    # energy has to be only energy 
-    obj_genes = intersect(rownames(classMat)[classMat[,obj_perturb]==1 & rowSums(classMat[,modelObj]) <= 1],conditionInfo$RNAi_WBID)
-  }else{
-    # if it is energy + one biomass obj; it is considered as the biomass obj
-    # if it is more than one biomass obj, it is considered as multi-obj
-    obj_genes = intersect(rownames(classMat)[classMat[,obj_perturb]==1 & rowSums(classMat[,setdiff(modelObj,'energy')]) <= 1],conditionInfo$RNAi_WBID)
-  }
+ 
+  # only look at single-core function genes (as RNAi targeted genes) for visualization
+  obj_genes = intersect(rownames(classMat)[classMat[,obj_perturb]==1 & rowSums(classMat[,modelObj]) == 1],conditionInfo$RNAi_WBID)
+  
+  # if (obj_perturb == 'energy'){
+  #   # energy has to be only energy 
+  #   obj_genes = intersect(rownames(classMat)[classMat[,obj_perturb]==1 & rowSums(classMat[,modelObj]) <= 1],conditionInfo$RNAi_WBID)
+  # }else{
+  #   # if it is energy + one biomass obj; it is considered as the biomass obj
+  #   # if it is more than one biomass obj, it is considered as multi-obj
+  #   obj_genes = intersect(rownames(classMat)[classMat[,obj_perturb]==1 & rowSums(classMat[,setdiff(modelObj,'energy')]) <= 1],conditionInfo$RNAi_WBID)
+  # }
+  
   myconds = intersect(str_replace(conditionInfo$RNAiID[conditionInfo$RNAi_WBID %in% obj_genes],' ','_'), inputTb_metResponsiove$condID)
   
   if(length(myconds)>0){
@@ -257,14 +227,7 @@ for (obj_perturb in modelObj){
       }
     }
     stats_long_merge = rbind(stats_long_merge, stats_long_down[toMerge,])
-    # fill in missing values
-    # for (cond in levels(stats_long_merge$RNAi_cond)){
-    #   for (obj in levels(stats_long_merge$variable)){
-    #     if (!any(stats_long_merge$RNAi_cond == cond & stats_long_merge$variable == obj)){
-    #       stats_long_merge = rbind(stats_long_merge, c(cond, obj, 0,0,0))
-    #     }
-    #   }
-    # }
+
     
     # plot up and down with the same condition order for later merging in graphics
     p1 <- ggplot(stats_long_merge, aes(x=RNAi_cond, y = up,fill=variable)) +
@@ -321,13 +284,14 @@ for (obj_perturb in modelObj){
   }
 }
 
-if (!singleOnly){
-  # we used to arbiturarily classify them into three categories; now change to a better way - we use DE similarity to assign them into 
-  # the most similar known category 
+if (!singleOnly){ # visualize the RNAi targets that are associated with multiple core functions
+  
+  # run the code for imputation based on cosine similarity between WPS profiles
   multi_obj_genes = intersect(rownames(classMat)[rowSums(classMat[,modelObj]) > 1],conditionInfo$RNAi_WBID[str_replace(conditionInfo$RNAiID,' ','_') %in% icel_resp])
   unclassified_genes = intersect(rownames(classMat)[rowSums(classMat[,modelObj]) == 0],conditionInfo$RNAi_WBID[str_replace(conditionInfo$RNAiID,' ','_') %in% icel_resp])
   imputedClass = data.frame(gene = c(multi_obj_genes, unclassified_genes), ori_class = c(rep('multi',length(multi_obj_genes)), rep('unclass',length(unclassified_genes))))
   imputedClass$class = NA
+  
   # To assign the most likely labels, we first filtered out all conditions without a cloest condition of at least 0.2 cosine with labels.
   # Next we looked at the top 5 most similar conditions with labels; the label was imputed if (a) all top 5 are the same label, or (2) 
   #  the most abundant class (max sum of cosine) is very dominating the entire thing (the sum of cosine for a class is higher than the sum of cosine of any other one by two fold or more)
@@ -536,15 +500,6 @@ if (!singleOnly){
         }
         
         
-        # fill in missing values
-        # for (cond in levels(stats_long_merge$RNAi_cond)){
-        #   for (obj in levels(stats_long_merge$variable)){
-        #     if (!any(stats_long_merge$RNAi_cond == cond & stats_long_merge$variable == obj)){
-        #       stats_long_merge = rbind(stats_long_merge, c(cond, obj, 0,0,0))
-        #     }
-        #   }
-        # }
-        
         # plot up and down with the same condition order for later merging in graphics
         p1 <- ggplot(stats_long_merge, aes(x=RNAi_cond, y = up,fill=variable)) +
           geom_bar(stat="identity", position="fill",colour="black", size = 0.1) + 
@@ -603,16 +558,9 @@ if (!singleOnly){
 }
 
 
-# simulate the simple rewiring model and calculate the percetage explained by the model 
-# assume the major energy drain is: protein syn, lipid syn, and glycan syn
-# define the rewiring model 
-# the principle is simplified into one sentence: activate compromised obj and repress all other objs
-# we need to define the obj compromise for each RNAi 
-
-# OF NOTE: to keep this modeling simple, the class selection by DE similarity is not performed in this step; the rewiring 
-# model calculation is fully based on FBA classification and the multi-class genes were used literally (assuming it affects multiple objectives)
-# and the unclassified conditions will be left out from the analysis. This also guarantees the same set of RNAi was analyzed in every randomization 
-# we get the conditions to analyze (icel_responsive (at least 2 up or 2 down DEG) and classified)
+# compare the DEGs profiles with CR model expectation 
+# this consistency analysis is essentially the same as FBA-fused CR model analysis. The only difference is that in FBA-fused analysis, we check for the 
+# proportion of explained DEG among ALL ICEL DEGs, while for consistency we checked for explained DEGs among GENES WITH CORE FUNCTION ASSOCIATIONS. 
 total_condition_analyzed = c()
 for (i in 1:length(icel_resp)){
   if (rowSums(classMat[conditionInfo$RNAi_WBID[match(icel_resp[i], str_replace(conditionInfo$RNAiID,' ','_'))],c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0){
@@ -663,7 +611,7 @@ rewire_rate = rowSums(tmp[,c(1,3)])
 rewire_rate[is.na(rewire_rate)] = 0
 b[rank(rewire_rate,ties.method ='first')] =b
 model_explained$RNAi_cond = factor(model_explained$RNAi_cond,levels = b)
-
+# reformat table for plotting 
 model_explained_long_up = reshape2::melt(model_explained[,c("RNAi_cond","UP_yes","UP_no")])
 model_explained_long_down = reshape2::melt(model_explained[,c("RNAi_cond","DOWN_yes","DOWN_no" )])
 model_explained_long = model_explained_long_up
@@ -742,7 +690,7 @@ tmp = tmp / rowSums(tmp)
 obs_rate_down = mean(tmp$DOWN_yes, na.rm = T)
 obs_total_DE_rate_down = sum(model_explained[,c(4)]) / sum(model_explained[,4:5])
 
-# try a randomization to assess the significance 
+# now, run a randomization test (by randomizing the FBA classification matrix) to assess the significance 
 nRand = 10000
 set.seed(1126)
 rand_rate = c()
@@ -756,12 +704,6 @@ mustHasClass = unique(conditionInfo$RNAi_WBID[str_replace(conditionInfo$RNAiID,'
 justRandom = setdiff(rownames(classMat), mustHasClass)
 hasClassInd = as.numeric(which(rowSums(classMat[,modelObj])>0))
 
-# library(doParallel)
-# myCluster <- makeCluster(10)
-# registerDoParallel(myCluster)
-
-# system.time(
-# x <- foreach(nn=1:nRand, .combine='c') %do% {
 for (nn in 1:nRand){
   # generate the random classification matrix
   new_gene_names = rep(NA, nrow(classMat))
@@ -790,13 +732,13 @@ for (nn in 1:nRand){
     # compare with DEG 
     # up genes
     subClassMat = classMat_rand[rownames(classMat_rand) %in% DEGs_up, modelObj]
-    subClassMat = subClassMat[rowSums(subClassMat) > 0, ]
+    subClassMat = subClassMat[rowSums(subClassMat) > 0, ] # exclude any DEGs that do not have a FBA-core-function associations
     # calculate the DEG explained by model
     model_explained$UP_yes[condInd] = sum(rowSums(subClassMat[,affectedObj,drop = F]) > 0)
     model_explained$UP_no[condInd] = sum(rowSums(subClassMat[,affectedObj,drop = F]) == 0)
     # down genes
     subClassMat = classMat_rand[rownames(classMat_rand) %in% DEGs_down, modelObj]
-    subClassMat = subClassMat[rowSums(subClassMat) > 0, ]
+    subClassMat = subClassMat[rowSums(subClassMat) > 0, ] # exclude any DEGs that do not have a FBA-core-function associations
     # calculate the DEG explained by model
     model_explained$DOWN_yes[condInd] = sum(rowSums(subClassMat[,setdiff(modelObj, affectedObj),drop = F]) > 0)
     model_explained$DOWN_no[condInd] = sum(rowSums(subClassMat[,setdiff(modelObj, affectedObj),drop = F]) == 0)
@@ -828,6 +770,7 @@ for (nn in 1:nRand){
   # list(list(mean(rewire_rate_rand), sum(model_explained[,c(2,4)]) / sum(model_explained[,2:5])))
 }
 
+# save and plot
 save(file = 'randomization_result_consistency_FBA_fused_model.Rdata',rand_rate, rand_rate2, rand_rate_up, rand_rate2_up, rand_rate_down, rand_rate2_down)
 hist(rand_rate)
 hist(rand_rate2)

@@ -1,11 +1,19 @@
-# 02062023
-# note: these responsive conditions may be redefined with losen cutoff for meta-analysis 
+# edge quantification analysis of the interactions between core functions 
+
+# the four scripts for edge quantification are generally similar, with alterations for specific analysis. 
+# we commented one (3_DEG_modeling_edge_direction_test_randFBA.R) in greater details and the remaining fours 
+# were concisely commented with more focus on places that are different than 3_DEG_modeling_edge_direction_test_randFBA.R
+
+# this script focus on the edge quantification with testing hypothesis of overrepresentation of a specific interacting edge
+# among all edges of a core function perturbation, using the randomization of core function associations
+
 
 library(stringr)
 library(ggplot2)
 library(ggpubr)
 library(matrixStats)
 
+# load data 
 # load the met gene classifications
 classMat = read.csv('output/FBA_classification_matrix.csv',row.names = 1)
 iCELnames = read.csv('./../../input_data/otherTbls/iCEL_IDtbl.csv')
@@ -64,27 +72,6 @@ inputTb_metResponsiove = inputTb_metResponsiove[!(conditionInfo$RNAi_WBID[match(
                                                     iCELnames$WormBase_Gene_ID[match(pollist$pol_in_model, iCELnames$ICELgene)]),]
 
 
-# manually inspecting a few conditions
-# myCond = 'x.nduf_2.2_met6_lib1' # use this to tune the program
-# upDEGs = inputTb_metResponsiove$WBID[inputTb_metResponsiove$condID == myCond & inputTb_metResponsiove$log2FoldChange_raw > 0]
-# downDEGs = inputTb_metResponsiove$WBID[inputTb_metResponsiove$condID == myCond & inputTb_metResponsiove$log2FoldChange_raw < 0]
-# 
-# tmp = classMat[rownames(classMat) %in% upDEGs, ]
-# colSums(tmp)
-# pheatmap::pheatmap(tmp, labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)])
-# pdf('tmp.pdf')
-# pheatmap::pheatmap(tmp, labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)],fontsize_row = 3)
-# dev.off()
-# 
-# tmp = classMat[rownames(classMat) %in% downDEGs, ]
-# colSums(tmp)
-# pheatmap::pheatmap(tmp)
-# 
-# 
-# tmp = classMat[rownames(classMat) %in% conditionInfo$RNAi_WBID[str_replace(conditionInfo$RNAiID,' ','_') %in% unique(inputTb_metResponsiove$condID)], ]
-# pheatmap::pheatmap(tmp)
-# sum(rowSums(tmp) == 0)
-
 # show the classification of all genes that is iCEL responsive (at least two up or two down)
 upTbl = inputTb_metResponsiove[inputTb_metResponsiove$log2FoldChange_raw > 0, ]
 ct1 = table(upTbl$condID)
@@ -93,40 +80,20 @@ ct2 = table(downTbl$condID)
 icel_resp = union(names(ct1)[ct1 > 1], names(ct2)[ct2 > 1])
 tmp = classMat[rownames(classMat) %in% conditionInfo$RNAi_WBID[str_replace(conditionInfo$RNAiID,' ','_') %in% icel_resp],]
 colSums(tmp)
-#pheatmap::pheatmap(tmp, labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)])
-#pheatmap::pheatmap(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')], labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)])
-# pdf('tmp.pdf')
-# pheatmap::pheatmap(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')], labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)],fontsize_row = 2)
-# dev.off()
+
 
 sum(rowSums(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')])>0)/nrow(tmp)
-# 77% valid RNAi targets was included in the modeling framework 
 sum(rowSums(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')])==1)/nrow(tmp)
-# 54% was assigned to a unique classification
 # total number of analyzable condition is 
 n_total = sum(rowSums(classMat[conditionInfo$RNAi_WBID[match(icel_resp, str_replace(conditionInfo$RNAiID,' ','_'))],c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0 )
 n_total/length(icel_resp)
-# 78% valid RNAi conditions are analyzed in the modeling framework 
 # check for the coverage of the unclustered conditions
 uniConds = icel_resp[rowSums(classMat[conditionInfo$RNAi_WBID[match(icel_resp, str_replace(conditionInfo$RNAiID,' ','_'))],c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0]
 RNAiclusters = read.csv('./../../2_DE/output/RNAi_groups.csv')
 sum(RNAiclusters$clusters[(str_replace(RNAiclusters$RNAiID,' ','_') %in% uniConds)] == -1)/sum(RNAiclusters$clusters==-1)
-# although the overall coverage of the RNAi conditions is at similar level (75% vs 78%), the FBA modeling is unbiased 
-# so it covers 44% of unclustered conditions and it assesses all iCEL DEG instead of just selected coexpression clusters
-# so this justifies it as a systems-level validation
 length(intersect(rownames(classMat)[rowSums(classMat[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0], inputTb_metResponsiove$WBID))/(length(unique(inputTb_metResponsiove$WBID)))
-# it covers 66% of DEG space 
 
 
-# simulate the simple rewiring model and calculate the percetage explained by the model 
-# assume the major energy drain is: protein syn, lipid syn, and glycan syn
-# define the rewiring model 
-# the principle is simplified into one sentence: activate compromised obj and repress all other objs
-# we need to define the obj compromise for each RNAi 
-
-# OF NOTE: to keep this modeling simple, the class selection by DE similarity is not performed in this step; the rewiring 
-# model calculation is fully based on FBA classification and the multi-class genes were used literally (assuming it affects multiple objectives)
-# and the unclassified conditions will be left out from the analysis. This also guarantees the same set of RNAi was analyzed in every randomization 
 # we get the conditions to analyze (icel_responsive (at least 2 up or 2 down DEG) and classified)
 total_condition_analyzed = c()
 for (i in 1:length(icel_resp)){
@@ -135,6 +102,8 @@ for (i in 1:length(icel_resp)){
   }
 }
 
+
+# quantify the edges 
 
 # 01072024: this simple model was kept as a control point to compare with old results; but in publication,
 # we used the FBA-fused model all the time
@@ -198,7 +167,7 @@ for (condInd in 1:length(total_condition_analyzed)){
     DEGs_up = inputTb_metResponsiove$WBID[inputTb_metResponsiove$condID == myCond & inputTb_metResponsiove$log2FoldChange_raw > 0]
     DEGs_down = inputTb_metResponsiove$WBID[inputTb_metResponsiove$condID == myCond & inputTb_metResponsiove$log2FoldChange_raw < 0]
     
-    # determine compromised obj
+    # determine affected obj
     labeledObj = colnames(classMat)[classMat[conditionInfo$RNAi_WBID[str_replace(conditionInfo$RNAiID,' ','_') == myCond],]==1]
     labeledObj = intersect(labeledObj, modelObj)
     
@@ -219,7 +188,6 @@ for (condInd in 1:length(total_condition_analyzed)){
       model_explained$UP_no[condInd] = sum(rowSums(subClassMat[,affectedObj,drop = F]) == 0)
       
       # fill in the observed model 
-      # check if it is a single model 
       if (length(labeledObj) == 1){
         # only consider single-category genes
         subClassMat_single = subClassMat[rowSums(subClassMat) == 1,]
@@ -348,10 +316,6 @@ for (condInd in 1:length(total_condition_analyzed)){
 model_explained_single = model_explained_single[!rowAlls(is.na(model_explained_single[,2:5])),]
 
 
-# ==> may be quantify by single and calculate pvalue for each edge and together for single only again
-# ==> we can provide two quantification figure, either single or weighted multiple
-# ==> integrate the calculation of overall explainability by only single obj
-
 
 # the overall average explained rate (up and down together) is 
 tmp = model_explained[,2:5]
@@ -360,7 +324,7 @@ rewire_rate = rowSums(tmp[,c(1,3)])
 rewire_rate[is.na(rewire_rate)] = 0
 obs_rate = mean(rewire_rate)
 obs_total_DE_rate = sum(model_explained[,c(2,4)]) / sum(model_explained[,2:5])
-# the overall average explained rate (up and down seperately) is 
+# the overall average explained rate (up and down separately) is 
 # up
 tmp = model_explained[,2:3]
 tmp = tmp / rowSums(tmp)
@@ -393,9 +357,9 @@ obs_rate_down_single = mean(tmp$DOWN_yes, na.rm = T)
 obs_total_DE_rate_down_single = sum(model_explained_single[,c(4)]) / sum(model_explained_single[,4:5])
 
 
-
 # quick visualization of the edges by proportion
 library(igraph)
+# the make_g_tbl function is different from that in 3_DEG_modeling_edge_direction_test_randFBA.R
 make_g_tbl <- function(g){
   g_tbl = data.frame(RNAi = rep(modelObj,5), DEG = c(rep(modelObj[1], 5),
                                                      rep(modelObj[2], 5),
@@ -410,7 +374,8 @@ make_g_tbl <- function(g){
   for (i in 1:nrow(g_tbl)){
     g_tbl$proportion[i] = g[[g_tbl$RNAi[i]]][[g_tbl$type[i]]][[g_tbl$DEG[i]]]
   }
-  # normalize within each type of RNAi 
+  # normalize within each type of RNAi (the proportion of a specific interaction over all interactions related to a core function perturbation)
+  # the proportion calculated in this way will give a test on the hypothesis of overrepresentation of a specific edge among all possible edges instead of just the direction
   for (i in 1:length(modelObj)){
     g_tbl$proportion[g_tbl$RNAi == modelObj[i]] =  g_tbl$proportion[g_tbl$RNAi == modelObj[i]] / sum(g_tbl$proportion[g_tbl$RNAi == modelObj[i]])
   }
@@ -449,11 +414,9 @@ g_tbl_full_norm = make_g_tbl(model_fit_all$normalized_counts)
 
 
 
-
-# try a randomization to assess the significance 
+# randomization to assess the significance 
 nRand = 10000
 set.seed(1126)
-# we have a ton to randomize
 rand_stat = list()
 rand_stat$default_CR_full = list(rand_rate = c(), rand_rate2 = c(), rand_rate_up = c(), rand_rate2_up = c(), rand_rate_down = c(), rand_rate2_down = c())
 rand_stat$default_CR_single = list(rand_rate = c(), rand_rate2 = c(), rand_rate_up = c(), rand_rate2_up = c(), rand_rate_down = c(), rand_rate2_down = c())
@@ -470,12 +433,6 @@ mustHasClass = unique(conditionInfo$RNAi_WBID[str_replace(conditionInfo$RNAiID,'
 justRandom = setdiff(rownames(classMat), mustHasClass)
 hasClassInd = as.numeric(which(rowSums(classMat[,modelObj])>0))
 
-# library(doParallel)
-# myCluster <- makeCluster(10)
-# registerDoParallel(myCluster)
-
-# system.time(
-# x <- foreach(nn=1:nRand, .combine='c') %do% {
 for (nn in 1:nRand){
   # generate the random classification matrix
   new_gene_names = rep(NA, nrow(classMat))
@@ -793,6 +750,7 @@ sig_cutoff = 0.2
 # possible that after shuffling, all RNAi conditions gets other categories and no protein syn RNAi. In this case, 
 # the protein syn RNAi edges will get NA and should be just ignored in the p-value calculation (to not bias anything
 # as putting all proportion as zero is also problematic as we normalizing within RNAi or within a RNAi-DEG pair)
+
 # single and raw
 g_tbl_single_raw$p_value = NA
 for (i in 1:nrow(g_tbl_single_raw)){
@@ -906,8 +864,7 @@ plot(graph,
 dev.off()
 
 
-# when calculate the enrichment, calculate the reletive frequency against the opposite direction instead of total frequency (
-# calculate the proportion by up/(up+down) for each RNAi-DEG node pair)
+# finally, save the results
 edge_quant = g_tbl_single_raw
 colnames(edge_quant)[4] = 'prop_single_raw'
 colnames(edge_quant)[5] = 'prop_p_single_raw'

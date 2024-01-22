@@ -1,16 +1,11 @@
-# 02062023
-# note: these responsive conditions may be redefined with losen cutoff for meta-analysis 
-# we also tested CR model with energy not repressing anything and only activates energy; the result is slightly less significant than the current CR model
-# we didnt test energy repressed others since it is not logical
-
-# in general, this 150% increase from baseline is quite representative. Even if we check for the individual edge randomization and 
-# for these big edges (the 'C' edges), it is still similar level of significance (~1.5 fold baseline). So there is no magic small 
-# baseline unless we go for super simplified model (such as only five 'C'). 
+# this is a script to visualize the core function associations for the DEGs of gspd-1 RNAi 
 
 library(stringr)
 library(ggplot2)
 library(ggpubr)
 library(matrixStats)
+
+# load data as previous 
 
 # load the met gene classifications
 classMat = read.csv('output/FBA_classification_matrix.csv',row.names = 1)
@@ -70,27 +65,7 @@ inputTb_metResponsiove = inputTb_metResponsiove[!(conditionInfo$RNAi_WBID[match(
                                                     iCELnames$WormBase_Gene_ID[match(pollist$pol_in_model, iCELnames$ICELgene)]),]
 
 
-# manually inspecting a few conditions
-# myCond = 'x.nduf_2.2_met6_lib1' # use this to tune the program
-# upDEGs = inputTb_metResponsiove$WBID[inputTb_metResponsiove$condID == myCond & inputTb_metResponsiove$log2FoldChange_raw > 0]
-# downDEGs = inputTb_metResponsiove$WBID[inputTb_metResponsiove$condID == myCond & inputTb_metResponsiove$log2FoldChange_raw < 0]
-# 
-# tmp = classMat[rownames(classMat) %in% upDEGs, ]
-# colSums(tmp)
-# pheatmap::pheatmap(tmp, labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)])
-# pdf('tmp.pdf')
-# pheatmap::pheatmap(tmp, labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)],fontsize_row = 3)
-# dev.off()
-# 
-# tmp = classMat[rownames(classMat) %in% downDEGs, ]
-# colSums(tmp)
-# pheatmap::pheatmap(tmp)
-# 
-# 
-# tmp = classMat[rownames(classMat) %in% conditionInfo$RNAi_WBID[str_replace(conditionInfo$RNAiID,' ','_') %in% unique(inputTb_metResponsiove$condID)], ]
-# pheatmap::pheatmap(tmp)
-# sum(rowSums(tmp) == 0)
-
+# show some numbers 
 # show the classification of all genes that is iCEL responsive (at least two up or two down)
 upTbl = inputTb_metResponsiove[inputTb_metResponsiove$log2FoldChange_raw > 0, ]
 ct1 = table(upTbl$condID)
@@ -99,41 +74,24 @@ ct2 = table(downTbl$condID)
 icel_resp = union(names(ct1)[ct1 > 1], names(ct2)[ct2 > 1])
 tmp = classMat[rownames(classMat) %in% conditionInfo$RNAi_WBID[str_replace(conditionInfo$RNAiID,' ','_') %in% icel_resp],]
 colSums(tmp)
-#pheatmap::pheatmap(tmp, labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)])
 pheatmap::pheatmap(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')], labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)])
-# pdf('tmp.pdf')
-# pheatmap::pheatmap(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')], labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)],fontsize_row = 2)
-# dev.off()
 
 sum(rowSums(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')])>0)/nrow(tmp)
-# 77% valid RNAi targets was included in the modeling framework 
 sum(rowSums(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')])==1)/nrow(tmp)
-# 54% was assigned to a unique classification
 # total number of analyzable condition is 
 n_total = sum(rowSums(classMat[conditionInfo$RNAi_WBID[match(icel_resp, str_replace(conditionInfo$RNAiID,' ','_'))],c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0 )
 n_total/length(icel_resp)
-# 78% valid RNAi conditions are analyzed in the modeling framework 
 # check for the coverage of the unclustered conditions
 uniConds = icel_resp[rowSums(classMat[conditionInfo$RNAi_WBID[match(icel_resp, str_replace(conditionInfo$RNAiID,' ','_'))],c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0]
 RNAiclusters = read.csv('./../../../../2_DE/output/RNAi_groups.csv')
 sum(RNAiclusters$clusters[(str_replace(RNAiclusters$RNAiID,' ','_') %in% uniConds)] == -1)/sum(RNAiclusters$clusters==-1)
-# although the overall coverage of the RNAi conditions is at similar level (75% vs 78%), the FBA modeling is unbiased 
-# so it covers 44% of unclustered conditions and it assesses all iCEL DEG instead of just selected coexpression clusters
-# so this justifies it as a systems-level validation
 length(intersect(rownames(classMat)[rowSums(classMat[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0], inputTb_metResponsiove$WBID))/(length(unique(inputTb_metResponsiove$WBID)))
 # it covers 66% of DEG space 
 
-
-# try to make plots for the 54% and 23% seperately (we also include the 44% in the 23% analysis)
+# use the same set of codes for making the bar plot visualization 
 total_condition_analyzed = c()
 
-# to visualize the model, we define the multi-obj that contains the target obj as the target obj, others 
-# rank by their total counts of calls and defined as the highest count to lowest (winer takes all)
-# also try simply use this winer takes all rule for all ranks, so the plot is not biased by hypothesis
-# first make plots for the 50% unique classified genes
 obj_perturb = 'lipid'
-# obj_response = 'lipid' # only used
-# obj_direction = 'up'
 modelObj = c('energy','lipid','pro_modi','pro_syn','nucl_acid')
 pdfHeight = c("energy" = 12,
             'lipid' = 7,
@@ -147,14 +105,14 @@ pdfWidth = c("energy" = 20,
              'nucl_acid' = 14)
 
 
-
+# only analyze one condition 
 myCond = 'x.gspd_1_met7_lib2'
 DEGs_up = inputTb_metResponsiove$WBID[inputTb_metResponsiove$condID == myCond & inputTb_metResponsiove$log2FoldChange_raw > 0]
 DEGs_down = inputTb_metResponsiove$WBID[inputTb_metResponsiove$condID == myCond & inputTb_metResponsiove$log2FoldChange_raw < 0]
 classMat_up = classMat[rownames(classMat) %in% DEGs_up, modelObj]
 classMat_down = classMat[rownames(classMat) %in% DEGs_down, modelObj]
 
-# manually sort the rows
+# manually sort the rows for best visual effects
 sortRowsManual <- function(classMat_up){
   ct = colSums(classMat_up)
   classMat_up = classMat_up[,names(ct)[order(ct,decreasing = T)]]
@@ -200,6 +158,7 @@ sortRowsManual <- function(classMat_up){
 library(pheatmap)
 dev.off()
 
+# plot the classification matrix 
 pdf('figures/FBA_classification_example_gspd_1.pdf')
 classMat_up = sortRowsManual(classMat_up)
 classMat_up = classMat_up[,c("lipid", "pro_modi","nucl_acid", "energy",  "pro_syn")]

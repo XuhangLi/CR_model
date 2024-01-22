@@ -167,6 +167,14 @@ model.rxnNotes(ismember(model.rxns,{'RC04360','RC04571','RC07759','RC01787','RC0
                                     {'Restricting non-canonical NADPH production flux. Canonical reactions were selected based on PMID: 24805240 (incl. RM00248, RC02736, RC01528, RC00267, RM00267, RM01220, RC01220 and RM00216).'};
 
 
+% other changes
+model = changeRxnBounds(model,'RCC0139',0,'l'); % although BRENDA supports reversible, a sig. reverse flux is not likely feasible and this is the setting in human model
+model.rxnNotes(strcmp(model.rxns,'RCC0139')) = {'Reaction RCC0139 was constrained to only allow forward flux (bounds = [0,1000]). This is because we found the reverse flux of this reaction can convert diphosphate (ppi) back to GTP without energy cost, forming a thermodynamically infeasible loop that recycles ppi produced in AA-tRNA synthesis to fuel GTP for protein synthesis without using energy (ATP). The modification of reversibility is supported by the reversibility annotation of the corresponding EC family (2.7.7.13) in the human model Human1.'};
+
+model = changeRxnBounds(model,'TCM1071',0,'b'); 
+model.rxnNotes(strcmp(model.rxns,'TCM1071')) = {'Block TCM1071 that is a misannotation in the model and should be not existing.'};
+
+
 % add drains to uncouple biomass binding 
 allPrecursors = model.mets(model.S(:, strcmp(model.rxns, 'BIO0107'))<0);
 for i = 1:length(allPrecursors)

@@ -1,5 +1,5 @@
 %% summary
-% this simulation is primarily to classfy genes into each objective; but
+% this simulation is primarily to classfy genes into each core function; but
 % it may also help explain the regulatory hierachy by its multiple
 % objectives classification;
 % regardless of explaining hierachy, we classify genes as follows: 

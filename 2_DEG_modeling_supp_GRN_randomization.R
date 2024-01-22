@@ -1,29 +1,13 @@
-# 02062023
-# note: these responsive conditions may be redefined with losen cutoff for meta-analysis 
+# testing FBA-fused CR model with GRN randomization
 
-# when normalizing the GRN, the background is even higher but the variance is lower. This is because most iCEL DEGs are the 
-# energy and lipid genes for up and enegry genes for down. Therefore, it fits into the models for many conditions (especially
-# for energy and lipid conditions), causing a generally high bg. The gain of explanation is only 10% but obviously significant 
-
-# we should think about if testing the edge specificity as an indicator of general CR model significance is meaningful. CR model 
-# is also a result of preferences in energy and lipid genes as DE genes so only testing the edge specificity doesnt seems very 
-# meaningful. but on the other hand, this randomization is good to tell which edge is specific so we want to keep. 
-
-# the FBA randomization has a lower baseline because it is a randomization at the network gene level (without a preference for 
-# lipid or energy gene), so the permutation of lipid/energy bias in a way decreased the baseline.
-
-# a fair permutation is to both rewire the edges (so gene-condition connection is broken) and shuffle the gene labels (i.e., the DE 
-# gene name can randomly exchange with possible iCEL gene names). This will remove the lipid/energy preference (and it is essentially
-# identical to dual permutation - simontanouly shuffling the FBA classification labels)
-
-# ==> dual randomization is similar to the randomization of FBA labeling 
-# ==> the GRN randomization has a higher baseline but looks highly significance due to tight bg distribution
+# in addition to randomizing core function associations, we can also randomize the GRN to test if it is significant. 
 
 library(stringr)
 library(ggplot2)
 library(ggpubr)
 library(matrixStats)
 
+# load data for testing the FBA-fused model
 # load the met gene classifications
 scoreMat = read.csv('output/delta_flux_scoreMat.csv',row.names = 1)
 classMat = as.data.frame(1*(scoreMat > 1e-3))
@@ -45,7 +29,7 @@ inputTb=read.csv('./../../2_DE/output/DE_merged_clean_pcutoff_0.005_master_table
 inputTb = inputTb[-which(inputTb$RNAi == 'x.mrpl_44'),]
 inputTb = inputTb[inputTb$WBID != 'WBGene00008514',]
 
-# no self
+# remove DEGs related to RNAi targeted genes
 inputTb$RNAiID = paste(inputTb$RNAi, inputTb$batchID)
 inputTb$RNAi_geneName = inputTb$RNAi
 inputTb$RNAi_geneName = str_replace(inputTb$RNAi_geneName,'^x.','')
@@ -61,7 +45,7 @@ conditionInfo = read.csv('./../../2_DE/output/RNAi_condition_metaInfo.csv',row.n
 inputTb_metResponsiove = inputTb[inputTb$RNAiID %in% conditionInfo$RNAiID[conditionInfo$isICEL & conditionInfo$isResponsive], ]
 inputTb_metResponsiove=inputTb_metResponsiove[,c("WBID","RNAi","log2FoldChange_raw","condID")]
 
-# exclude the nonclassic metabolic genes from the analysis 
+# exclude the non-canonical metabolic genes from the analysis 
 # only keep iCEL DEG
 inputTb_metResponsiove = inputTb_metResponsiove[inputTb_metResponsiove$WBID %in% rownames(classMat),]
 # exclude UGT (both for RNAi and DEG)
@@ -84,27 +68,6 @@ inputTb_metResponsiove = inputTb_metResponsiove[!(conditionInfo$RNAi_WBID[match(
                                                     iCELnames$WormBase_Gene_ID[match(pollist$pol_in_model, iCELnames$ICELgene)]),]
 
 
-# manually inspecting a few conditions
-# myCond = 'x.nduf_2.2_met6_lib1' # use this to tune the program
-# upDEGs = inputTb_metResponsiove$WBID[inputTb_metResponsiove$condID == myCond & inputTb_metResponsiove$log2FoldChange_raw > 0]
-# downDEGs = inputTb_metResponsiove$WBID[inputTb_metResponsiove$condID == myCond & inputTb_metResponsiove$log2FoldChange_raw < 0]
-# 
-# tmp = classMat[rownames(classMat) %in% upDEGs, ]
-# colSums(tmp)
-# pheatmap::pheatmap(tmp, labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)])
-# pdf('tmp.pdf')
-# pheatmap::pheatmap(tmp, labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)],fontsize_row = 3)
-# dev.off()
-# 
-# tmp = classMat[rownames(classMat) %in% downDEGs, ]
-# colSums(tmp)
-# pheatmap::pheatmap(tmp)
-# 
-# 
-# tmp = classMat[rownames(classMat) %in% conditionInfo$RNAi_WBID[str_replace(conditionInfo$RNAiID,' ','_') %in% unique(inputTb_metResponsiove$condID)], ]
-# pheatmap::pheatmap(tmp)
-# sum(rowSums(tmp) == 0)
-
 # show the classification of all genes that is iCEL responsive (at least two up or two down)
 upTbl = inputTb_metResponsiove[inputTb_metResponsiove$log2FoldChange_raw > 0, ]
 ct1 = table(upTbl$condID)
@@ -113,43 +76,19 @@ ct2 = table(downTbl$condID)
 icel_resp = union(names(ct1)[ct1 > 1], names(ct2)[ct2 > 1])
 tmp = classMat[rownames(classMat) %in% conditionInfo$RNAi_WBID[str_replace(conditionInfo$RNAiID,' ','_') %in% icel_resp],]
 colSums(tmp)
-#pheatmap::pheatmap(tmp, labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)])
-#pheatmap::pheatmap(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')], labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)])
-# pdf('tmp.pdf')
-# pheatmap::pheatmap(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')], labels_row = iCELnames$ICELgene[match(rownames(tmp), iCELnames$WormBase_Gene_ID)],fontsize_row = 2)
-# dev.off()
 
 sum(rowSums(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')])>0)/nrow(tmp)
-# 77% valid RNAi targets was included in the modeling framework 
 sum(rowSums(tmp[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')])==1)/nrow(tmp)
-# 54% was assigned to a unique classification
 # total number of analyzable condition is 
 n_total = sum(rowSums(classMat[conditionInfo$RNAi_WBID[match(icel_resp, str_replace(conditionInfo$RNAiID,' ','_'))],c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0 )
 n_total/length(icel_resp)
-# 78% valid RNAi conditions are analyzed in the modeling framework 
 # check for the coverage of the unclustered conditions
 uniConds = icel_resp[rowSums(classMat[conditionInfo$RNAi_WBID[match(icel_resp, str_replace(conditionInfo$RNAiID,' ','_'))],c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0]
 RNAiclusters = read.csv('./../../2_DE/output/RNAi_groups.csv')
 sum(RNAiclusters$clusters[(str_replace(RNAiclusters$RNAiID,' ','_') %in% uniConds)] == -1)/sum(RNAiclusters$clusters==-1)
-# although the overall coverage of the RNAi conditions is at similar level (75% vs 78%), the FBA modeling is unbiased 
-# so it covers 44% of unclustered conditions and it assesses all iCEL DEG instead of just selected coexpression clusters
-# so this justifies it as a systems-level validation
 length(intersect(rownames(classMat)[rowSums(classMat[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0], inputTb_metResponsiove$WBID))/(length(unique(inputTb_metResponsiove$WBID)))
-# it covers 66% of DEG space 
 modelObj = c('energy','lipid','pro_modi','pro_syn','nucl_acid')
 
-
-
-
-# simulate the simple rewiring model and calculate the percetage explained by the model 
-# assume the major energy drain is: protein syn, lipid syn, and glycan syn
-# define the rewiring model 
-# the principle is simplified into one sentence: activate compromised obj and repress all other objs
-# we need to define the obj compromise for each RNAi 
-
-# OF NOTE: to keep this modeling simple, the class selection by DE similarity is not performed in this step; the rewiring 
-# model calculation is fully based on FBA classification and the multi-class genes were used literally (assuming it affects multiple objectives)
-# and the unclassified conditions will be left out from the analysis. This also guarantees the same set of RNAi was analyzed in every randomization 
 # we get the conditions to analyze (icel_responsive (at least 2 up or 2 down DEG) and classified)
 total_condition_analyzed = c()
 for (i in 1:length(icel_resp)){
@@ -160,8 +99,8 @@ for (i in 1:length(icel_resp)){
 
 modelObj = c('energy','lipid','pro_modi','pro_syn','nucl_acid')
 # 01052024: update to use the FBA-fused version
-# we dont need to define CR model in the fully fused version
 
+# check CR-model explanation 
 model_explained = data.frame(RNAi_cond = total_condition_analyzed)  
 model_explained$UP_yes = 0
 model_explained$UP_no = 0
@@ -188,8 +127,6 @@ for (condInd in 1:length(total_condition_analyzed)){
     # calculate the DEG explained by model
     model_explained$DOWN_yes[condInd] = sum(rowSums(subClassMat[,setdiff(modelObj, affectedObj),drop = F]) > 0)
     model_explained$DOWN_no[condInd] = sum(rowSums(subClassMat[,setdiff(modelObj, affectedObj),drop = F]) == 0)
-    
-    
     
 }
 
@@ -259,11 +196,7 @@ p2 <- ggplot(model_explained_long, aes(x=RNAi_cond, y = -down,fill=variable)) +
 
 #p2
 
-#pdf(paste('figures/FBA_DEG_explained_distribution_simplest_model.pdf',sep = ''),
-#    height = 7, width = 14)
 print(ggarrange(p2, p1, nrow = 1))
-#dev.off()
-
 
 # the overall average explained rate (up and down together) is 
 obs_rate = mean(rewire_rate)
@@ -281,12 +214,17 @@ tmp = tmp / rowSums(tmp)
 obs_rate_down = mean(tmp$DOWN_yes, na.rm = T)
 obs_total_DE_rate_down = sum(model_explained[,c(4)]) / sum(model_explained[,4:5])
 
-# try a randomization to assess the significance
 
-# generate the random iCEL GRN
-# to focus on the edge wiring specificity instead any other possible confoundings, we keep the GRN to be randomized within 
-# the GRN in this specific analysis, which means iCEL genes and the analyzed conditions
+# run the GRN randomization to access significance 
+
+
+# first, generate the random iCEL GRN
+# To focus on the edge wiring specificity instead any other possible confounding factors, we keep the GRN to be 
+# randomized within the sub-GRN in this specific analysis, which means iCEL genes and the analyzed conditions
+
+# let's generate the random GRN first
 library(igraph)
+# define the GRN using igraph
 oriNet = inputTb_metResponsiove[inputTb_metResponsiove$condID %in% total_condition_analyzed, c("condID","WBID")]
 oriNet_FC = inputTb_metResponsiove[inputTb_metResponsiove$condID %in% total_condition_analyzed, ]
 oriNet_FC$RNAi_geneName = conditionInfo$RNAi_geneName[match(oriNet_FC$condID, str_replace(conditionInfo$RNAiID,' ','_'))]
@@ -294,10 +232,12 @@ oriNet_FC$RNAi_WBID = conditionInfo$RNAi_WBID[match(oriNet_FC$condID, str_replac
 allgenes = unique(oriNet_FC$WBID)
 colnames(oriNet) = c('from','to')
 g_ori <- graph_from_data_frame(oriNet, directed=TRUE)
+# randomize using edge swapping
 set.seed(1030)
 for (j in 1:10){ # generate final data later 
   sampleSet = list()
   for (i in 1:1000){
+    # randomly rewiring (swap edges) the network for 50-100x of the number of edges in the original network
     randNet = rewire(g_ori,with = keeping_degseq(niter = sample(50:100,1) * nrow(oriNet)))
 
     # convert randNet back to a DE table for analysis 
@@ -305,15 +245,15 @@ for (j in 1:10){ # generate final data later
     colnames(randNet) = c('RNAiID','WBID')
     randNet$RNAi_geneName = oriNet_FC$RNAi_geneName[match(randNet$RNAiID, oriNet_FC$condID)]
     randNet$RNAi_WBID = oriNet_FC$RNAi_WBID[match(randNet$RNAiID, oriNet_FC$condID)]
-    #randNet = randNet[,colnames(randTemplate)]
-    # fix the RNAi-target edges
+    
+    # fix the RNAi-target edges (they should not exist; if exits, rewire to something else again)
     nSelf = which(randNet$WBID == randNet$RNAi_WBID)
     while(length(nSelf)>0){
       for (k in 1:length(nSelf)){
         rewireTo = 0
         while (rewireTo == 0) {
           tryTo = sample(nrow(randNet),1)
-          # 05252023: fix minor bug in the criteria to strigently avoid self targeting edges and avoid bias in the swapping (the original is already close to perfect)
+          # 05252023: fix minor bug in the criteria to stringently avoid self targeting edges and avoid bias in the swapping (the original is already close to perfect)
           if (!(randNet$WBID[tryTo] %in% randNet$WBID[randNet$RNAiID == randNet$RNAiID[nSelf[k]]]) & # not existing edge
               !(randNet$WBID[nSelf[k]] %in% randNet$WBID[randNet$RNAiID == randNet$RNAiID[tryTo]]) & # not existing edge
               randNet$WBID[tryTo] != randNet$RNAi_WBID[nSelf[k]] & # not the RNAi target
@@ -331,10 +271,10 @@ for (j in 1:10){ # generate final data later
     }
     
     
-    # finally assign the rewired FC
+    # finally assign the rewired FC (fold changes)
     # since the rewire function in igraph does not support attributes, we have to manually add back the FC information
     # as the network was randomly shuffled, it doesnt matter if FC attributes goes with the edge in rewiring; the key 
-    # is that the distirbution of FC for each gene should be maintained. so we randomly assign the original FC vector for 
+    # is that the distribution of FC for each gene should be maintained. so we randomly assign the original FC vector for 
     # each gene into the new random network (the FC distribution of each sample does not matter as we dont expect it to 
     # have any distribution)
     randNet$log2FoldChange_raw = NA
@@ -346,6 +286,7 @@ for (j in 1:10){ # generate final data later
     
     sampleSet[[i]] = randNet
     
+    # these are codes for sanity check of the random network 
     # a = table(randNet$RNAiID)
     # plot(as.numeric(a[names(N_DE)]), as.numeric(N_DE))
     # all(as.numeric(a[names(N_DE)]) == as.numeric(N_DE))
@@ -368,7 +309,7 @@ for (j in 1:10){ # generate final data later
 
 
 
-
+# now, let's calculable the CR model explanation using the random networks
 nRand = 10
 set.seed(1126)
 rand_rate = c()
@@ -378,18 +319,13 @@ rand_rate2_up = c()
 rand_rate_down = c()
 rand_rate2_down = c()
 
-# library(doParallel)
-# myCluster <- makeCluster(10)
-# registerDoParallel(myCluster)
+randomizeFBA = FALSE # whether or not to randomize the gene classification simultaneously 
 
-# system.time(
-# x <- foreach(nn=1:nRand, .combine='c') %do% {
-randomizeFBA = FALSE # whether or not to randomize the gene classification simontanously 
+# this is for randomizeFBA = TRUE
 # we keep the number of labels for each obj and keep the analyzed conditions assigned to at least one label
 mustHasClass = unique(conditionInfo$RNAi_WBID[str_replace(conditionInfo$RNAiID,' ','_') %in% total_condition_analyzed])
 justRandom = setdiff(rownames(classMat), mustHasClass)
 hasClassInd = as.numeric(which(rowSums(classMat[,modelObj])>0))
-
 
 for (nn in 1:nRand){
   load(paste('./randomGRN/randNet1000_ES_batch_',nn,'.Rdata',sep = ''))
@@ -463,6 +399,8 @@ for (nn in 1:nRand){
   }
   # list(list(mean(rewire_rate_rand), sum(model_explained[,c(2,4)]) / sum(model_explained[,2:5])))
 }
+
+# save and plot the results 
 if (randomizeFBA){
   save(file = 'randomization_result_FBA_fused_model_randGRN_randClassification.Rdata',rand_rate, rand_rate2, rand_rate_up, rand_rate2_up, rand_rate_down, rand_rate2_down)
 }else{
@@ -502,6 +440,19 @@ hist(rand_rate2_down, main = paste('p <',signif((1+sum(rand_rate2_down>=obs_tota
 abline(v = obs_total_DE_rate_down)
 
 dev.off()
+
+
+# additional notes:
+
+# when normalizing the GRN, the background is even higher but the variance is lower. This is because most iCEL DEGs are the 
+# energy and lipid genes for up and energy genes for down. Therefore, it fits into the models for many conditions (especially
+# for energy and lipid conditions), causing a generally high bg. The gain of explanation is only 10% but obviously significant 
+
+# the FBA randomization has a lower baseline because it is a randomization at the network gene level (without a preference for 
+# lipid or energy gene), so the permutation of lipid/energy bias in a way decreased the baseline.
+
+# interestingly, we found dual randomization (not shown) is similar to the randomization of FBA labeling 
+
 
 
 # 
