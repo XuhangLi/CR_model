@@ -863,18 +863,30 @@ gene_list = list(
 
 library(eulerr)
 set.seed(1030)
-fit2 <- euler(classMat[,modelObj], 
-              shape = "ellipse",
-              #loss = 'region',
-              #loss_aggregator = 'max', 
-              control = list(extraopt = TRUE, extraopt_threshold = 0)
-              )
-pdf(paste('figures/euler_plot_iCEL_gene_classification.pdf',sep = ''),width = 7,height = 7)
-plot(fit2, quantities = TRUE, fill = c('#FF6701','#77AC30','#EDB120','#0072BD','#4DBEEE'),main = paste('unclassified =', sum(rowSums(classMat[,modelObj]==1)==0),'(',100*round(sum(rowSums(classMat[,modelObj]==1)==0)/nrow(classMat),2),'% )'))
-dev.off()
+seeds = sample(1:100000, 100)
+fits = list()
+for (i in 1:100){
+  set.seed(seeds[i])
+  
+  fit2 <- euler(classMat[,modelObj], 
+                shape = "ellipse",
+                #loss = 'region',
+                #loss_aggregator = 'max', 
+                control = list(extraopt = TRUE, extraopt_threshold = 0)
+                )
+  fits[[i]] = fit2
+  pdf(paste('figures/eulerPlot_random/euler_plot_iCEL_gene_classification_seed_',seeds[i],'.pdf',sep = ''),width = 7,height = 7)
+  print(plot(fit2, quantities = TRUE, fill = c('#FF6701','#77AC30','#EDB120','#0072BD','#4DBEEE'),main = paste('unclassified =', sum(rowSums(classMat[,modelObj]==1)==0),'(',100*round(sum(rowSums(classMat[,modelObj]==1)==0)/nrow(classMat),2),'% )')))
+  dev.off()
+}
+
+# the best appearance is from seed 94084 (there are quite a few with similar layout. we just randomly picked one)
 
 df = as.data.frame(fit2$original.values)
 write.csv(df, 'figures/euler_plot_iCEL_gene_classification_breakdown.csv')
+# 03112024: we realized that mccc-2 was not included in this figure, but here we didnt compare with WPS data
+# so we should include it. For the sake of convinience, we just modify the numbers in the final figure without 
+# regenerating the figure (because +1 is not going to be notable in the area of the chart)
 
 # we cannot get a visually plausible figure by changing seeds, so we give up on getting this from the function
 # itself, we will just change the numbers in the original figure - it is generally fine because the changes in
