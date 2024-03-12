@@ -17,6 +17,9 @@
 % to explain the hirachy of a gene, the simulation matrix needs to be
 % revisited to find what obj has been influenced 
 
+% 03122024: of note, for historical reasons, we the "ECM synthesis"
+% category in the codes is named "protein_modi" or "protein modifications".
+
 %% next step
 % this simulation only simulates the energy catabolism and biomass
 % anabolism; the degradatons of the objectives are not simulated; to do the
@@ -26,6 +29,7 @@
 % and its suboptimal minimal flux and delta flux etc; 
 
 %%
+addpath helper_scripts\
 % Load model
 load('input/iCEL1314.mat');
 model = addDefaultConstraint(model,'minimalExchange@1');
@@ -232,7 +236,7 @@ refType = 'coexpression_cluster';
 rel_delta_flux = rdf_lipidObj;
 
 reflabels = readtable('input/benchmark_obj_labels.csv'); % gene name may have some mismatches - fix soon
-geneID = readtable('./../../input_data/otherTbls/iCEL_IDtbl.csv');
+geneID = readtable('input/iCEL_IDtbl.csv');
 [A B] = ismember(reflabels.WBID, geneID.WormBase_Gene_ID);
 reflabels.gene_name(A) = geneID.ICELgene(B(A));
 myset = reflabels.gene_name(ismember(reflabels.label,objClass) & strcmp(reflabels.reference, refType));
@@ -293,7 +297,7 @@ refType = 'coexpression_cluster';
 FBA_labels = obj_lipid_genes;
 
 reflabels = readtable('input/benchmark_obj_labels.csv'); % gene name may have some mismatches - fix soon
-geneID = readtable('./../../input_data/otherTbls/iCEL_IDtbl.csv');
+geneID = readtable('input/iCEL_IDtbl.csv');
 [A B] = ismember(reflabels.WBID, geneID.WormBase_Gene_ID);
 reflabels.gene_name(A) = geneID.ICELgene(B(A));
 myset = reflabels.gene_name(ismember(reflabels.label,objClass) & strcmp(reflabels.reference, refType));
@@ -301,64 +305,68 @@ myset = reflabels.gene_name(ismember(reflabels.label,objClass) & strcmp(reflabel
 predicted = intersect(myset, FBA_labels)
 failed_to_predict = setdiff(myset, FBA_labels)
 %% check classification
-addpath tools/
-setListData = { toFactor(obj_energy_genes, tgtGenes),...
-                toFactor(obj_redox_genes, tgtGenes),...
-                toFactor(obj_lipid_genes, tgtGenes)
-                };
-figure
-h1 = vennEulerDiagram(setListData, 'drawProportional', true, 'SetLabels', ...
-    ["energy","redox","lipid"]);
-h1.ShowIntersectionCounts = true;
+% this is for internal inspection and the helper scripts are not included
+% in the Github. If you want to test them, please refer to the raw data
+% zip file from Zendo
 
-figure
-setListData = { toFactor(obj_energy_genes, tgtGenes),...
-                toFactor(obj_proteinModification_genes, tgtGenes),...
-                toFactor(obj_nucleicAcid_genes, tgtGenes)
-                };
-h2 = vennEulerDiagram(setListData, 'drawProportional', true, 'SetLabels', ...
-    ["energy", "proModification","nuclAcid"]);
-h2.ShowIntersectionCounts = true;
-
-figure
-setListData = { toFactor(obj_energy_genes, tgtGenes),...
-                toFactor(obj_proteinSyn_genes, tgtGenes),...
-                toFactor(obj_proteinMito_genes, tgtGenes)
-                };
-h3 = vennEulerDiagram(setListData, 'drawProportional', true, 'SetLabels', ...
-    ["energy","proSyn","proMito"]);
-h3.ShowIntersectionCounts = true;
-
-figure
-setListData = { toFactor(obj_lipid_genes, tgtGenes),...
-                toFactor(obj_proteinSyn_genes, tgtGenes),...
-                toFactor(obj_proteinMito_genes, tgtGenes)
-                };
-h4 = vennEulerDiagram(setListData, 'drawProportional', true, 'SetLabels', ...
-    ["lipid","proSyn","proMito"]);
-h4.ShowIntersectionCounts = true;
-
-
-figure
-setListData = { toFactor(obj_lipid_genes, tgtGenes),...
-                toFactor(obj_proteinModification_genes, tgtGenes),...
-                toFactor(obj_nucleicAcid_genes, tgtGenes)
-                };
-h2 = vennEulerDiagram(setListData, 'drawProportional', true, 'SetLabels', ...
-    ["lipid", "proModification","nuclAcid"]);
-h2.ShowIntersectionCounts = true;
-
-
-
-figure
-setListData = { toFactor(obj_proteinSyn_genes, tgtGenes),...
-                toFactor(obj_proteinMito_genes, tgtGenes),...
-                toFactor(obj_proteinModification_genes, tgtGenes),...
-                toFactor(obj_nucleicAcid_genes, tgtGenes)
-                };
-h2 = vennEulerDiagram(setListData, 'drawProportional', true, 'SetLabels', ...
-    ["proSyn", "proMito","proModification","nuclAcid"]);
-h2.ShowIntersectionCounts = true;
+% addpath tools/
+% setListData = { toFactor(obj_energy_genes, tgtGenes),...
+%                 toFactor(obj_redox_genes, tgtGenes),...
+%                 toFactor(obj_lipid_genes, tgtGenes)
+%                 };
+% figure
+% h1 = vennEulerDiagram(setListData, 'drawProportional', true, 'SetLabels', ...
+%     ["energy","redox","lipid"]);
+% h1.ShowIntersectionCounts = true;
+% 
+% figure
+% setListData = { toFactor(obj_energy_genes, tgtGenes),...
+%                 toFactor(obj_proteinModification_genes, tgtGenes),...
+%                 toFactor(obj_nucleicAcid_genes, tgtGenes)
+%                 };
+% h2 = vennEulerDiagram(setListData, 'drawProportional', true, 'SetLabels', ...
+%     ["energy", "proModification","nuclAcid"]);
+% h2.ShowIntersectionCounts = true;
+% 
+% figure
+% setListData = { toFactor(obj_energy_genes, tgtGenes),...
+%                 toFactor(obj_proteinSyn_genes, tgtGenes),...
+%                 toFactor(obj_proteinMito_genes, tgtGenes)
+%                 };
+% h3 = vennEulerDiagram(setListData, 'drawProportional', true, 'SetLabels', ...
+%     ["energy","proSyn","proMito"]);
+% h3.ShowIntersectionCounts = true;
+% 
+% figure
+% setListData = { toFactor(obj_lipid_genes, tgtGenes),...
+%                 toFactor(obj_proteinSyn_genes, tgtGenes),...
+%                 toFactor(obj_proteinMito_genes, tgtGenes)
+%                 };
+% h4 = vennEulerDiagram(setListData, 'drawProportional', true, 'SetLabels', ...
+%     ["lipid","proSyn","proMito"]);
+% h4.ShowIntersectionCounts = true;
+% 
+% 
+% figure
+% setListData = { toFactor(obj_lipid_genes, tgtGenes),...
+%                 toFactor(obj_proteinModification_genes, tgtGenes),...
+%                 toFactor(obj_nucleicAcid_genes, tgtGenes)
+%                 };
+% h2 = vennEulerDiagram(setListData, 'drawProportional', true, 'SetLabels', ...
+%     ["lipid", "proModification","nuclAcid"]);
+% h2.ShowIntersectionCounts = true;
+% 
+% 
+% 
+% figure
+% setListData = { toFactor(obj_proteinSyn_genes, tgtGenes),...
+%                 toFactor(obj_proteinMito_genes, tgtGenes),...
+%                 toFactor(obj_proteinModification_genes, tgtGenes),...
+%                 toFactor(obj_nucleicAcid_genes, tgtGenes)
+%                 };
+% h2 = vennEulerDiagram(setListData, 'drawProportional', true, 'SetLabels', ...
+%     ["proSyn", "proMito","proModification","nuclAcid"]);
+% h2.ShowIntersectionCounts = true;
 %% classification matrix 
 classMat = zeros(length(tgtGenes), 7);
 classMat(:,1) = ismember(tgtGenes, obj_energy_genes);
@@ -407,121 +415,5 @@ intersect(myset, tgtGenes(rel_delta_flux > 1e-3))
 % energy RNAi cluster but no idea why connected to energy as well as not
 % captured in FBA
 
-%%
+%% quick inspection
 listRxn(test,opt_flux,'nadph[c]')
-%%
-%% old codes
-
-%%
-optimizeCbModel(test)
-optimizeCbModel(test)
-test = deleteModelGenes(test, 'RM00248')
-test = deleteModelGenes(test, 'gdh-1')
-optimizeCbModel(test)
-sol = optimizeCbModel(test)
-listRxn(test,sol.full,'nadph[c]')
-listRxn(test,sol.full,'4hphac[c]')
-listRxn(test,sol.full,'nadph[c]')
-%%
-listRxn(test,opt_flux,'nadph[c]')
-
-% test = deleteModelGenes(test, 'K07E3.4') % folate 1
-% test = deleteModelGenes(test, 'alh-3') % folate 2
-% test = deleteModelGenes(test, 'aco-2')
-%test = deleteModelGenes(test, 'gldc-1')
-%test = changeRxnBounds(test,'BIO0010',0.7,'l'); % default 10x bacterial uptake causes ETC infeasible, we lower down to 5x
-%test = changeRxnBounds(test,'RM00751',0,'b'); % default 10x bacterial uptake causes ETC infeasible, we lower down to 5x
-%test = changeRxnBounds(test,{'RM03293','RM00248','RC00711','RM00711','RM00216'},0,'b'); % default 10x bacterial uptake causes ETC infeasible, we lower down to 5x
-
-%% 
-relVm = Vmax_mat ./ repmat(Vmax_control, size(Vmax_mat,1),1);
-
-Vmax_check = array2table(relVm);
-Vmax_check.Properties.VariableNames = objSet;
-Vmax_check.Properties.RowNames = geneSet;
-%% code backup for single obj analysis
-% %% simulate the most efficient flux for each obj
-% myObj = 'RCC0005';
-% suboptimality_cutoff = 0.9; % a little flux (simulating delta flux) or 90% simulating suboptimal
-% sigFluxThreshold = 0.1; % 10% of system influx (bacteria) --> this is a tunable parameter 
-% 
-% test = changeObjective(model,myObj);
-% % test = deleteModelGenes(test, 'bckd-1A');
-% sol = optimizeCbModel(test);
-% optimal_obj = sol.obj * suboptimality_cutoff; % we use the principle of suboptimality 
-% test.lb(strcmp(test.rxns,myObj)) = optimal_obj;
-% opt_flux = minimizeModelFlux_XL(test);
-% 
-% optimal_totalFlux = sum(abs(opt_flux))
-% % sum(any(model.rxnGeneMat(abs(opt_flux)> abs(opt_flux(strcmp(model.rxns,'EXC0050'))) * sigFluxThreshold,:)==1,1))
-% 
-% %% calculate the total flux for each gene 
-% gene_flux = [];
-% for i = 1:length(model.genes)
-%     myrxns = model.rxns(model.rxnGeneMat(:,i)==1);
-%     gene_flux(i,1) = sum(abs(opt_flux(ismember(model.rxns,myrxns))));
-% end
-% 
-% n_total = sum(gene_flux > abs(opt_flux(strcmp(model.rxns,'EXC0050'))) * sigFluxThreshold)
-% %% compare with reference set 
-% objClass = {'energy'};
-% refType = 'RNAi_cluster';
-% 
-% reflabels = readtable('benchmark_obj_labels.csv'); % gene name may have some mismatches - fix soon
-% geneID = readtable('./../../../../input_data/otherTbls/iCEL_IDtbl.csv');
-% [A B] = ismember(reflabels.WBID, geneID.WormBase_Gene_ID);
-% reflabels.gene_name(A) = geneID.ICELgene(B(A));
-% myset = reflabels.gene_name(ismember(reflabels.label,objClass) & strcmp(reflabels.reference, refType));
-% 
-% figure
-% hold on
-% histogram(log10(1e-8+gene_flux(ismember(model.genes, myset))),'Normalization','probability',NumBins=30)
-% histogram(log10(1e-8+gene_flux),'Normalization','probability',NumBins=30)
-% hold off
-% legend({'subset','all'})
-% %% test the delta flux 
-% % simple delta or MOMA delta?? (simple delta may have the infeasible issue
-% % but MOMA delta will always have a number) ==> MOMA seems not very solid
-% % as we are not interested in how much the overfitted minimal flux
-% % distribution is disrupted, but how much cost of flux has to be paid to
-% % rewire 
-% 
-% tgtGenes = setdiff(model.genes,{'NA','ND','TBD','Unknown'});
-% GPRmethod = 'association';
-% 
-% rel_delta_flux = [];
-% for i = 1:length(tgtGenes)
-%     tgtGene = tgtGenes(i);
-%     test = changeObjective(model,myObj);
-%     test.lb(strcmp(test.rxns,myObj)) = optimal_obj;
-%     if strcmp(GPRmethod,'regular')
-%         test = deleteModelGenes(test,tgtGene);
-%     elseif strcmp(GPRmethod,'association')
-%         assoRxns = model.rxns(model.rxnGeneMat(:,strcmp(model.genes,tgtGene)) == 1);
-%         test = changeRxnBounds(test,assoRxns,0,'b');
-%     end
-% 
-%     flux = minimizeModelFlux_XL(test);
-%     if isstruct(flux)
-%         rel_delta_flux(i) = 1;
-%     else
-%         del_totalFlux = sum(abs(flux));
-%         rel_delta_flux(i) = (del_totalFlux - optimal_totalFlux) / optimal_totalFlux;
-%     end
-%     i/length(tgtGenes)
-% end
-% 
-% sum(rel_delta_flux > 1e-3)
-% %% compare with reference set 
-% 
-% figure
-% hold on
-% histogram(log10(1e-8+rel_delta_flux(ismember(tgtGenes, myset))),'Normalization','probability',NumBins=30)
-% histogram(log10(1e-8+rel_delta_flux),'Normalization','probability',NumBins=30)
-% hold off
-% legend({'subset','all'})
-% 
-% % based on lipid and energy, the delta flux method looks better with a
-% % common cutoff of 0.1% (0.001) for significant compromise of flux
-% % efficiency; the other parameter, suboptimality cutoff is generally very
-% % robust, eg 0.5-0.9;

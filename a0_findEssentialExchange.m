@@ -1,12 +1,12 @@
 initCobraToolbox
-
+addpath helper_scripts\
 %% 
 % we will generate a minimal exchange model that only essential exchange
 % reactions are allowed (including sinks for storage molecules)
 
 
 %%
-load('iCEL1314.mat');
+load('input/iCEL1314.mat');
 worm = addDefaultConstraint(model,'nutritionalFree@1');
 % worm = changeRxnBounds(worm,'RCC0005',10,'l');
 % additional SNK for nutritional free state
@@ -15,7 +15,7 @@ worm = changeRxnBounds(worm,'SNK0101',-1,'l');
 worm = changeRxnBounds(worm,'SNK1002',-1,'l');
 worm = changeRxnBounds(worm,'SNK1003',-1,'l');
 % make the epsilon vector
-[epsilon_f,epsilon_r, capacity_f, capacity_r] = makeEpsilonSeq(worm,worm.rxns,0.01,0.5);
+[epsilon_f,epsilon_r, capacity_f, capacity_r] = makeEpsilonSeq_server(worm,worm.rxns,0.01,0.5);
 %parsedGPR = GPRparser_xl(worm);% Extracting GPR data from model
 %worm.parsedGPR = parsedGPR;
 
@@ -101,7 +101,7 @@ MILPproblem2.vartype = vartype;
 MILPproblem2.osense = -1;
 MILPproblem2.x0 = [];
 
-solution2 = solveCobraMILP_XL(MILPproblem2, 'timeLimit', 7200, 'printLevel', 1);
+solution2 = solveCobraMILP_XL(MILPproblem2, 'timeLimit', 7200, 'printLevel', 1,'logFile','MILPlog');
 %% get minimal EX
 EXrxns = model.rxns(RHindex);
 closedEX = EXrxns(solution2.full(RHindex) >= -1e-8);
