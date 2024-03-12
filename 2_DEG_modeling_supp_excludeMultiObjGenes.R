@@ -10,7 +10,7 @@ library(matrixStats)
 
 # load the met gene classifications
 classMat = read.csv('output/FBA_classification_matrix.csv',row.names = 1)
-iCELnames = read.csv('./../../input_data/otherTbls/iCEL_IDtbl.csv')
+iCELnames = read.csv('input/iCEL_IDtbl.csv')
 rownames(classMat) = iCELnames$WormBase_Gene_ID[match(rownames(classMat),iCELnames$ICELgene)]
 # 02152023 since mrpl-44 is an multi-obj gene in FBA, so removing it or not will not change the analysis of single-obj genes here
 # so we didnt rerun the code with mrpl-44 removed
@@ -21,7 +21,7 @@ classMat[rowSums(classMat[,modelObj]) > 1,] = 0
 
 
 # load DEG result
-inputTb=read.csv('./../../2_DE/output/DE_merged_clean_pcutoff_0.005_master_table_FDR2d0.1_FC1.5_FCtype_log2FoldChange_raw_ALL.csv')
+inputTb=read.csv('input/DE_merged_clean_pcutoff_0.005_master_table_FDR2d0.1_FC1.5_FCtype_log2FoldChange_raw_ALL.csv')
 inputTb$RNAiID = paste(inputTb$RNAi, inputTb$batchID)
 inputTb$RNAi_geneName = inputTb$RNAi
 inputTb$RNAi_geneName = str_replace(inputTb$RNAi_geneName,'^x.','')
@@ -32,7 +32,7 @@ inputTb$condID = paste(inputTb$RNAi,inputTb$batchID,sep = '_')
 if (length(which(inputTb$WBID=="NoHit"))>0){
   inputTb=inputTb[-which(inputTb$WBID=="NoHit"),]}
 # filtering the low responsive and non-metabolic ones
-conditionInfo = read.csv('./../../2_DE/output/RNAi_condition_metaInfo.csv',row.names = 1)
+conditionInfo = read.csv('input/RNAi_condition_metaInfo.csv',row.names = 1)
 inputTb_metResponsiove = inputTb[inputTb$RNAiID %in% conditionInfo$RNAiID[conditionInfo$isICEL & conditionInfo$isResponsive], ]
 inputTb_metResponsiove=inputTb_metResponsiove[,c("WBID","RNAi","log2FoldChange_raw","condID")]
 
@@ -77,8 +77,8 @@ n_total = sum(rowSums(classMat[conditionInfo$RNAi_WBID[match(icel_resp, str_repl
 n_total/length(icel_resp)
 # check for the coverage of the unclustered conditions
 uniConds = icel_resp[rowSums(classMat[conditionInfo$RNAi_WBID[match(icel_resp, str_replace(conditionInfo$RNAiID,' ','_'))],c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0]
-RNAiclusters = read.csv('./../../2_DE/output/RNAi_groups.csv')
-sum(RNAiclusters$clusters[(str_replace(RNAiclusters$RNAiID,' ','_') %in% uniConds)] == -1)/sum(RNAiclusters$clusters==-1)
+#RNAiclusters = read.csv('./../../2_DE/output/RNAi_groups.csv')
+#sum(RNAiclusters$clusters[(str_replace(RNAiclusters$RNAiID,' ','_') %in% uniConds)] == -1)/sum(RNAiclusters$clusters==-1)
 
 
 # visualization 

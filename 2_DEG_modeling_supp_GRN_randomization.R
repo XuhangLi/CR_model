@@ -12,19 +12,19 @@ library(matrixStats)
 scoreMat = read.csv('output/delta_flux_scoreMat.csv',row.names = 1)
 classMat = as.data.frame(1*(scoreMat > 1e-3))
 
-iCELnames = read.csv('./../../input_data/otherTbls/iCEL_IDtbl.csv')
+iCELnames = read.csv('input/iCEL_IDtbl.csv')
 rownames(classMat) = iCELnames$WormBase_Gene_ID[match(rownames(classMat),iCELnames$ICELgene)]
 # fix minor bug - mrpl-44 is a misannotated gene in the model; in the model it should be mccc-2 but mislabeled as mrpl-44 (which is mito ribo gene), since ribo genes are excluded from the analysis, we also exclude mrpl-44
 classMat = classMat[-which(rownames(classMat) == 'WBGene00008514'),]
 
 # load the DE similarity 
-DEsim = read.csv('./../../2_DE/output/cosineSimilarity_FC_denoised_stationery_metabolic.csv', row.names = 1)
+DEsim = read.csv('input/cosineSimilarity_FC_denoised_stationery_metabolic.csv', row.names = 1)
 # remove the mrpl-44 condition from the analysis (we remove both from DEG and conditions since this DEG is not icel either)
 DEsim = DEsim[-which(rownames(DEsim) == 'x.mrpl_44_met3_lib1'),]
 DEsim = DEsim[,-which(colnames(DEsim) == 'x.mrpl_44_met3_lib1')]
 
 # load DEG result
-inputTb=read.csv('./../../2_DE/output/DE_merged_clean_pcutoff_0.005_master_table_FDR2d0.1_FC1.5_FCtype_log2FoldChange_raw_ALL.csv')
+inputTb=read.csv('input/DE_merged_clean_pcutoff_0.005_master_table_FDR2d0.1_FC1.5_FCtype_log2FoldChange_raw_ALL.csv')
 # remove the mrpl-44 condition from the analysis (we remove both from DEG and conditions since this DEG is not icel either)
 inputTb = inputTb[-which(inputTb$RNAi == 'x.mrpl_44'),]
 inputTb = inputTb[inputTb$WBID != 'WBGene00008514',]
@@ -40,7 +40,7 @@ inputTb$condID = paste(inputTb$RNAi,inputTb$batchID,sep = '_')
 if (length(which(inputTb$WBID=="NoHit"))>0){
   inputTb=inputTb[-which(inputTb$WBID=="NoHit"),]}
 # filtering the low responsive and non-metablic ones
-conditionInfo = read.csv('./../../2_DE/output/RNAi_condition_metaInfo.csv',row.names = 1)
+conditionInfo = read.csv('input/RNAi_condition_metaInfo.csv',row.names = 1)
 # only analyze the iCEL responsive
 inputTb_metResponsiove = inputTb[inputTb$RNAiID %in% conditionInfo$RNAiID[conditionInfo$isICEL & conditionInfo$isResponsive], ]
 inputTb_metResponsiove=inputTb_metResponsiove[,c("WBID","RNAi","log2FoldChange_raw","condID")]
@@ -84,9 +84,9 @@ n_total = sum(rowSums(classMat[conditionInfo$RNAi_WBID[match(icel_resp, str_repl
 n_total/length(icel_resp)
 # check for the coverage of the unclustered conditions
 uniConds = icel_resp[rowSums(classMat[conditionInfo$RNAi_WBID[match(icel_resp, str_replace(conditionInfo$RNAiID,' ','_'))],c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0]
-RNAiclusters = read.csv('./../../2_DE/output/RNAi_groups.csv')
-sum(RNAiclusters$clusters[(str_replace(RNAiclusters$RNAiID,' ','_') %in% uniConds)] == -1)/sum(RNAiclusters$clusters==-1)
-length(intersect(rownames(classMat)[rowSums(classMat[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0], inputTb_metResponsiove$WBID))/(length(unique(inputTb_metResponsiove$WBID)))
+#RNAiclusters = read.csv('./../../2_DE/output/RNAi_groups.csv')
+#sum(RNAiclusters$clusters[(str_replace(RNAiclusters$RNAiID,' ','_') %in% uniConds)] == -1)/sum(RNAiclusters$clusters==-1)
+#length(intersect(rownames(classMat)[rowSums(classMat[,c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0], inputTb_metResponsiove$WBID))/(length(unique(inputTb_metResponsiove$WBID)))
 modelObj = c('energy','lipid','pro_modi','pro_syn','nucl_acid')
 
 # we get the conditions to analyze (icel_responsive (at least 2 up or 2 down DEG) and classified)
