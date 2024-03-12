@@ -39,14 +39,15 @@ _R_ programs
 * __3_DEG_modeling_edge_direction_test_randGRN.R__: Same as __3_DEG_modeling_edge_direction_test_randFBA.R__ but uses randomization of mGRN instead of core function associations. Results not shown in the paper, but support 16 alternative parameter settings mentioned in Supplementary Method to ensure robustness.
 * __4_supplementary_analysis.R__: Reproducing the numbers (i.e., enrichment of genes associated with core functions in mGRN) reported in the paper.
 
-_helper functions_
-* __addDefaultConstraint.m__: Constraining the metabolic network model for performing FBA.
-* __listRxn4gene.m__: a helper reactions to track flux distributions related to a given gene. Only useful for developers who wants to look deep into the FBA results in core function simulations.
-
 _Folders_
 * __input__: inputs for CR model analysis
 * __output__: pre-stored outputs of modeling results. Used for making the figures in the paper.
 * __figures__: raw figures used for making the paper. These figures were the input for final figure making in Illustrator.
+* __helper_scripts__: helper functions in FBA analysis 
+  * __addDefaultConstraint.m__: Constraining the metabolic network model for performing FBA.
+  * __listRxn4gene.m__: a helper reactions to track flux distributions related to a given gene. Only useful for developers who wants to look deep into the FBA results in core function simulations.
+  * __iMAT_xl.m__: script to run iMAT algorithm, which was used in determining the essential exchange reactions.
+  * __solveCobraMILP_XL.m__: custom solver interface used in ```iMAT_xl```. 
 
 We tried our best to ensure the codes are well commented and readable. However, if you encounter any questions, please feel free to reach out (see below for __Contacts__)!
 
