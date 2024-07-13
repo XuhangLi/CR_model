@@ -101,6 +101,7 @@ for (score_cutoff in score_cutoffs){
 
   
   # calculate the proportion explained
+  total_condition_analyzed = c()
   for (i in 1:length(icel_resp)){
     if (rowSums(classMat[conditionInfo$RNAi_WBID[match(icel_resp[i], str_replace(conditionInfo$RNAiID,' ','_'))],c('energy','lipid','pro_modi','pro_syn','nucl_acid')]) > 0){
       total_condition_analyzed = c(total_condition_analyzed, icel_resp[i])
