@@ -1,4 +1,5 @@
 randomGRN/*
+REVISION/human_perturb_seq/input/source_data
 
 # History files
 .Rhistory
@@ -49,3 +50,4 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+REVISION/human_perturb_seq/input/source_data.zip
