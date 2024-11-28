@@ -51,6 +51,7 @@ _Folders_
 
 We tried our best to ensure the codes are well commented and readable. However, if you encounter any questions, please feel free to reach out (see below for __Contacts__)!
 
+**_Please be advised that a few large files (input and outputs of the program) cannot be uploaded into Github repo. These files were listed in the .gitignore file and are available at (Zenodo)[10.5281/zenodo.14237197] for download_**
 ## Contact
 
 Any questions or suggestions on reproducing CR model analysis or testing it in other systems/datasets are welcomed! Please contact Xuhang Li [xuhang.li\@umassmed.edu](mailto:xuhang.li@umassmed.edu) for questions!
